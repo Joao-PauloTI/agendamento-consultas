@@ -1,0 +1,31 @@
+{
+  "name": "agendamento-consultas-api",
+  "version": "0.0.1",
+  "description": "Api do projeto de agendamento de consultas",
+  "devDependencies": {
+    "ts-node": "3.3.0",
+    "@types/node": "^8.0.29",
+    "typescript": "2.5.2"
+  },
+  "dependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/cors": "^2.8.4",
+    "@types/helmet": "0.0.42",
+    "@types/reflect-metadata": "^0.1.0",
+    "body-parser": "^1.18.1",
+    "class-validator": "^0.9.1",
+    "cors": "^2.8.5",
+    "express": "^4.15.4",
+    "helmet": "^3.15.0",
+    "reflect-metadata": "^0.1.10",
+    "sqlite3": "^4.2.0",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "typeorm": "^0.2.27"
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "start": "set debug=* && ts-node-dev --respawn src/index.ts --transpileOnly",
+    "prod": "tsc && node ./build/app.js",
+    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run"
+  }
+}
