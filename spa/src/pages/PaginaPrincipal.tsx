@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from "react";
 import Axios from "axios";
-import { Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography } from "@material-ui/core";
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography } from "@material-ui/core";
 import { ColDef, DataGrid, ValueFormatterParams } from "@material-ui/data-grid";
 import { Cancel, Schedule, Send, Delete, Edit } from "@material-ui/icons";
 import moment from "moment";
 
 export default function PaginaPrincipal() {
 	const colunas: ColDef[] = [
-		{ field: "id", headerName: "Código", width: 100 },
-		{ field: "agendamento_dataHorario", headerName: "Data e Hora", width: 200 },
-		{ field: "paciente_nome", headerName: "Paciente", width: 290 },
-		{ field: "medico_nome", headerName: "Médico", width: 290 },
-		{ field: "medico_especialidade", headerName: "Especialidade", width: 250 },
+		{ field: "id", headerName: "Código", width: 80 },
+		{ field: "agendamento_dataHorario", headerName: "Data e Hora", width: 150 },
+		{ field: "paciente_nome", headerName: "Paciente", width: 260 },
+		{ field: "medico_nome", headerName: "Médico", width: 270 },
+		{ field: "medico_especialidade", headerName: "Especialidade", width: 270 },
 		{
 			field: "",
-			headerName: "Ações",
+			headerName: "",
 			renderCell: (params: ValueFormatterParams) => (
-				<div>
-					<IconButton onClick={() => editarAgendamento(params.data)} color="default" title="Editar agendamento">
-						<Edit />
-					</IconButton>
-					<IconButton onClick={() => excluirAgendamento(params.data.id)} color="secondary" title="Excluir agendamento">
-						<Delete />
-					</IconButton>
-				</div>
+				<IconButton onClick={() => editarAgendamento(params.data)} color="default" title="Editar agendamento">
+					<Edit />
+				</IconButton>
+			),
+		},
+		{
+			field: "",
+			headerName: "",
+			renderCell: (params: ValueFormatterParams) => (
+				<IconButton onClick={() => excluirAgendamento(params.data.id)} color="secondary" title="Excluir agendamento">
+					<Delete />
+				</IconButton>
 			),
 		},
 	];
@@ -37,6 +41,8 @@ export default function PaginaPrincipal() {
 	const fecharDialogNovoAgendamento = () => {
 		setDialogNovoAgendamento(false);
 	};
+
+	const [labelDialog, setLabelDialog] = useState("");
 
 	const [agendamentos, setAgendamentos] = useState([]);
 
@@ -80,7 +86,7 @@ export default function PaginaPrincipal() {
 
 	const salvarAgendamento = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (idAgendamento == "") {
+		if (idAgendamento === "") {
 			Axios.post("http://localhost:3333/agendamento-consultas/novo-agendamento", {
 				dataHorario: moment(dataHorario).format("DD/MM/YYYY HH:mm"),
 				idPaciente: paciente,
@@ -114,6 +120,8 @@ export default function PaginaPrincipal() {
 		setPaciente("");
 		setMedico("");
 		setDataHorario("");
+
+		setLabelDialog("Novo agendamento");
 		abrirDialogNovoAgendamento();
 	};
 
@@ -122,6 +130,8 @@ export default function PaginaPrincipal() {
 		setPaciente(agendamento.paciente_id);
 		setMedico(agendamento.medico_id);
 		setDataHorario(moment(agendamento.agendamento_dataHorario, "DD/MM/YYYY HH:mm").format("YYYY-MM-DDTHH:mm"));
+
+		setLabelDialog("Editar agendamento");
 		abrirDialogNovoAgendamento();
 	};
 
@@ -140,21 +150,18 @@ export default function PaginaPrincipal() {
 	}, []);
 
 	return (
-		<div>
+		<Box>
 			<Container>
-				<Typography variant="h4" align="center">
+				<Typography variant="h4" align="center" color="primary" style={{ marginBottom: 5 }}>
 					Agendamento de Consultas
 				</Typography>
-				<br />
-				<Button onClick={novoAgendamento} variant="contained" color="primary" startIcon={<Schedule />}>
+				<Button onClick={novoAgendamento} variant="contained" color="primary" startIcon={<Schedule />} style={{ marginBottom: 10 }}>
 					Agendar consulta
 				</Button>
-				<br />
-				<br />
 				<DataGrid rows={agendamentos} columns={colunas} pageSize={10} autoHeight />
 			</Container>
 			<Dialog open={dialogNovoAgendamento} onClose={fecharDialogNovoAgendamento} maxWidth={"md"} fullWidth>
-				<DialogTitle>Agendar consulta</DialogTitle>
+				<DialogTitle>{labelDialog}</DialogTitle>
 				<form onSubmit={salvarAgendamento}>
 					<DialogContent>
 						<input type="hidden" value={idAgendamento} />
@@ -184,6 +191,6 @@ export default function PaginaPrincipal() {
 					</DialogActions>
 				</form>
 			</Dialog>
-		</div>
+		</Box>
 	);
 }
