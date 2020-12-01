@@ -17,7 +17,7 @@ export default function PaginaPrincipal() {
 			headerName: "Ações",
 			renderCell: (params: ValueFormatterParams) => (
 				<div>
-					<IconButton onClick={() => editarAgendamento(params.data.id)} color="default" title="Editar agendamento">
+					<IconButton onClick={() => editarAgendamento(params.data)} color="default" title="Editar agendamento">
 						<Edit />
 					</IconButton>
 					<IconButton onClick={() => excluirAgendamento(params.data.id)} color="secondary" title="Excluir agendamento">
@@ -28,17 +28,19 @@ export default function PaginaPrincipal() {
 		},
 	];
 
-	const [dialog, setDialog] = useState(false);
+	const [dialogNovoAgendamento, setDialogNovoAgendamento] = useState(false);
 
-	const abrirDialog = () => {
-		setDialog(true);
+	const abrirDialogNovoAgendamento = () => {
+		setDialogNovoAgendamento(true);
 	};
 
-	const fecharDialog = () => {
-		setDialog(false);
+	const fecharDialogNovoAgendamento = () => {
+		setDialogNovoAgendamento(false);
 	};
 
 	const [agendamentos, setAgendamentos] = useState([]);
+
+	const [idAgendamento, setIdAgendamento] = useState("");
 
 	const [listaPacientes, setListaPacientes] = useState([]);
 
@@ -62,7 +64,7 @@ export default function PaginaPrincipal() {
 		setDataHorario(event.target.value);
 	};
 
-	useEffect(() => {
+	const buscarDados = () => {
 		Axios.get("http://localhost:3333/agendamento-consultas/agendamentos").then((response) => {
 			setAgendamentos(response.data);
 		});
@@ -74,35 +76,68 @@ export default function PaginaPrincipal() {
 		Axios.get("http://localhost:3333/agendamento-consultas/medicos").then((response) => {
 			setListaMedicos(response.data);
 		});
-	}, []);
+	};
 
 	const salvarAgendamento = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		Axios.post("http://localhost:3333/agendamento-consultas/novo-agendamento", {
-			dataHorario: moment(dataHorario).format("DD/MM/YYYY HH:mm"),
-			idPaciente: paciente,
-			idMedico: medico,
-		})
-			.then((response) => {
-				console.log(response.data);
-				fecharDialog();
+		if (idAgendamento == "") {
+			Axios.post("http://localhost:3333/agendamento-consultas/novo-agendamento", {
+				dataHorario: moment(dataHorario).format("DD/MM/YYYY HH:mm"),
+				idPaciente: paciente,
+				idMedico: medico,
 			})
-			.catch((erro) => {
-				console.log(erro);
-			});
+				.then((response) => {
+					buscarDados();
+					fecharDialogNovoAgendamento();
+				})
+				.catch((erro) => {
+					console.log(erro);
+				});
+		} else {
+			Axios.post(`http://localhost:3333/agendamento-consultas/editar-agendamento/${idAgendamento}`, {
+				dataHorario: moment(dataHorario).format("DD/MM/YYYY HH:mm"),
+				idPaciente: paciente,
+				idMedico: medico,
+			})
+				.then((response) => {
+					buscarDados();
+					fecharDialogNovoAgendamento();
+				})
+				.catch((erro) => {
+					console.log(erro);
+				});
+		}
+	};
+
+	const novoAgendamento = () => {
+		setIdAgendamento("");
+		setPaciente("");
+		setMedico("");
+		setDataHorario("");
+		abrirDialogNovoAgendamento();
+	};
+
+	const editarAgendamento = (agendamento: any) => {
+		setIdAgendamento(agendamento.id);
+		setPaciente(agendamento.paciente_id);
+		setMedico(agendamento.medico_id);
+		setDataHorario(moment(agendamento.agendamento_dataHorario, "DD/MM/YYYY HH:mm").format("YYYY-MM-DDTHH:mm"));
+		abrirDialogNovoAgendamento();
 	};
 
 	const excluirAgendamento = (id: any) => {
 		Axios.delete(`http://localhost:3333/agendamento-consultas/excluir-agendamento/${id}`)
 			.then((response) => {
-				console.log(response.data);
+				buscarDados();
 			})
 			.catch((erro) => {
 				console.log(erro);
 			});
 	};
 
-	const editarAgendamento = (id: any) => {};
+	useEffect(() => {
+		buscarDados();
+	}, []);
 
 	return (
 		<div>
@@ -111,35 +146,36 @@ export default function PaginaPrincipal() {
 					Agendamento de Consultas
 				</Typography>
 				<br />
-				<Button onClick={abrirDialog} variant="contained" color="primary" startIcon={<Schedule />}>
+				<Button onClick={novoAgendamento} variant="contained" color="primary" startIcon={<Schedule />}>
 					Agendar consulta
 				</Button>
 				<br />
 				<br />
 				<DataGrid rows={agendamentos} columns={colunas} pageSize={10} autoHeight />
 			</Container>
-			<Dialog open={dialog} onClose={fecharDialog} maxWidth={"md"} fullWidth>
+			<Dialog open={dialogNovoAgendamento} onClose={fecharDialogNovoAgendamento} maxWidth={"md"} fullWidth>
 				<DialogTitle>Agendar consulta</DialogTitle>
 				<form onSubmit={salvarAgendamento}>
 					<DialogContent>
-						<TextField select label="Paciente" value={paciente} required onChange={mudarPaciente} margin="dense" fullWidth variant="outlined">
+						<input type="hidden" value={idAgendamento} />
+						<TextField select label="Paciente" value={paciente} required onChange={mudarPaciente} InputLabelProps={{ shrink: true }} margin="dense" fullWidth variant="outlined">
 							{listaPacientes.map((opcao: any) => (
 								<MenuItem key={opcao.paciente_id} value={opcao.paciente_id}>
 									{opcao.paciente_nome}
 								</MenuItem>
 							))}
 						</TextField>
-						<TextField select label="Médico" value={medico} required onChange={mudarMedico} margin="dense" fullWidth variant="outlined">
+						<TextField select label="Médico" value={medico} required onChange={mudarMedico} InputLabelProps={{ shrink: true }} margin="dense" fullWidth variant="outlined">
 							{listaMedicos.map((opcao: any) => (
 								<MenuItem key={opcao.medico_id} value={opcao.medico_id}>
 									{opcao.medico_especialidade} | {opcao.medico_nome}
 								</MenuItem>
 							))}
 						</TextField>
-						<TextField onChange={mudarDataHorario} required label="Data e Hora" type="datetime-local" InputLabelProps={{ shrink: true }} margin="dense" fullWidth variant="outlined" />
+						<TextField value={dataHorario} onChange={mudarDataHorario} required label="Data e Hora" type="datetime-local" InputLabelProps={{ shrink: true }} margin="dense" fullWidth variant="outlined" />
 					</DialogContent>
 					<DialogActions>
-						<Button onClick={fecharDialog} color="default" endIcon={<Cancel />} variant="contained">
+						<Button onClick={fecharDialogNovoAgendamento} color="default" endIcon={<Cancel />} variant="contained">
 							Cancelar
 						</Button>
 						<Button type="submit" color="primary" endIcon={<Send />} variant="contained">
